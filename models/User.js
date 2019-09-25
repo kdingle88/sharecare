@@ -15,11 +15,16 @@ const UserSchema = new mongoose.Schema({
     required: true
   },
   avatar: {
-    type: String
+    type: String,
+    required: true
   },
   date: {
     type: Date,
     default: Date.now
+  },
+  shelter: {
+    type: Boolean,
+    default: false
   }
 });
 
