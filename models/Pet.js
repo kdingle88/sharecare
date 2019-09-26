@@ -34,8 +34,14 @@ const PetSchema = new mongoose.Schema({
   },
   medications: [
     {
-      type: String,
-      condition: String
+      name: {
+        type: String,
+        required: true
+      },
+      condition: {
+        type: String,
+        required: true
+      }
     }
   ],
   personality: {
