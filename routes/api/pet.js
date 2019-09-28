@@ -7,6 +7,20 @@ const Pet = require("../../models/Pet");
 const Profile = require("../../models/Profile");
 const User = require("../../models/User");
 
+// @route     GET api/pet/all
+// @desc      Get all pets
+// @access    Public
+
+router.get("/all", async (req, res) => {
+  try {
+    const pets = await Pet.find();
+    res.json(pets);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
 // @route     Get api/pet/:id
 // @desc      Get a pet
 // @access    Public
@@ -22,6 +36,32 @@ router.get("/:id", async (req, res) => {
     console.error(err.message);
     if (err.kind === "ObjectId") {
       return res.status(404).json({ errors: [{ msg: "Pet not found" }] });
+    }
+
+    res.status(500).send("Server Error");
+  }
+});
+
+// @route     GET api/pet/shelter/:shelter_id
+// @desc      Show all pets by  shelter profile
+// @access    Public
+
+router.get("/shelter/:shelter_id", async (req, res) => {
+  try {
+    const pets = await Pet.find({ shelter: req.params.shelter_id });
+
+    if (!pets || pets.length === 0) {
+      return res
+        .status(404)
+        .json({ errors: [{ msg: "No pets found for this shelter" }] });
+    }
+    res.json(pets);
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === "ObjectId") {
+      return res
+        .status(404)
+        .json({ errors: [{ msg: "No pets found for this shelter" }] });
     }
 
     res.status(500).send("Server Error");
@@ -68,6 +108,9 @@ router.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
+    if (req.user.shelter === false) {
+      return res.status(401).json({ msg: "User not authorized" });
+    }
 
     try {
       const {
@@ -107,6 +150,7 @@ router.post(
       if (food) {
         petFields.food = food.split(",").map(meal => meal.trim());
       }
+
       // Create
       pet = new Pet(petFields);
 
@@ -222,20 +266,6 @@ router.put(
   }
 );
 
-// @route     GET api/pet/all
-// @desc      Get all pets
-// @access    Public
-
-router.get("/all", async (req, res) => {
-  try {
-    const pets = await Pet.find();
-    res.json(pets);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server Error");
-  }
-});
-
 // @route     DELETE api/pet/:id
 // @desc      Delete a pet
 // @access    Private
@@ -263,14 +293,12 @@ router.delete("/:id", auth, async (req, res) => {
   }
 });
 
-module.exports = router;
-
-// @route     PUT api/pet/medications
+// @route     PUT api/pet/medications/:pet_id
 // @desc      Add pet medications
 // @access    Private
 
 router.put(
-  "/medications",
+  "/medications/:pet_id",
   [
     auth,
     [
@@ -296,7 +324,10 @@ router.put(
     };
 
     try {
-      const pet = await Pet.findOne({ shelter: req.user.id });
+      const pet = await Pet.findOne({
+        shelter: req.user.id,
+        _id: req.params.pet_id
+      });
 
       pet.medications.unshift(newMed);
 
@@ -311,12 +342,15 @@ router.put(
 );
 
 // @route     DELETE api/pet/medications/:med_id
-// @desc      Delete pet medications
+// @desc      Delete a pet medication
 // @access    Private
 
-router.delete("/medications/:med_id", auth, async (req, res) => {
+router.delete("/medications/:pet_id/:med_id", auth, async (req, res) => {
   try {
-    const pet = await Pet.findOne({ shelter: req.user.id });
+    const pet = await Pet.findOne({
+      shelter: req.user.id,
+      _id: req.params.pet_id
+    });
 
     // Get Remove Index
     const removeIndex = pet.medications
@@ -337,3 +371,183 @@ router.delete("/medications/:med_id", auth, async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
+
+// @route     PUT api/pet/request/:pet_id
+// @desc      Request to join pet cluster
+// @access    Private
+
+router.put("/request/:pet_id", auth, async (req, res) => {
+  try {
+    const pet = await Pet.findById(req.params.pet_id);
+
+    //Check if pet already has cluster request by user
+
+    if (
+      pet.clusterRequest.filter(
+        request => request.user.toString() === req.user.id
+      ).length > 0
+    ) {
+      return res
+        .status(400)
+        .json({ msg: "Cluster request already sent, waiting for approval" });
+    }
+    //Check to see if user is already in cluster
+    if (
+      pet.cluster.filter(request => request.user.toString() === req.user.id)
+        .length > 0
+    ) {
+      return res.status(400).json({ msg: "You are already in cluster" });
+    }
+    pet.clusterRequest.push({ user: req.user.id });
+
+    await pet.save();
+
+    res.json(pet.clusterRequest);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+// @route     Put api/pet/unrequest/:pet_id/
+// @desc      User remove request to join pet cluster
+// @access    Private
+
+router.put("/unrequest/:pet_id", auth, async (req, res) => {
+  try {
+    const pet = await Pet.findById(req.params.pet_id);
+
+    //Check if pet even has cluster request by user to delete
+    if (
+      pet.clusterRequest.filter(
+        request => request.user.toString() === req.user.id
+      ).length === 0
+    ) {
+      return res
+        .status(400)
+        .json({ msg: "No cluster request has been found for this user" });
+    }
+    //Get the remove index
+    const removeIndex = pet.clusterRequest
+      .map(request => request.user.toString())
+      .indexOf(req.user.id);
+
+    pet.clusterRequest.splice(removeIndex, 1);
+
+    await pet.save();
+
+    res.json(pet.clusterRequest);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+// @route     PUT api/pet/denyrequest/:pet_id/:cluster_req_id
+// @desc      Shelter remove user request to join pet cluster
+// @access    Private
+
+router.put("/denyrequest/:pet_id/:cluster_req_id", auth, async (req, res) => {
+  try {
+    const pet = await Pet.findOne({
+      shelter: req.user.id,
+      _id: req.params.pet_id
+    });
+
+    //Check if pet even has cluster request by user to delete
+    if (
+      pet.clusterRequest.filter(
+        request => request._id.toString() === req.params.cluster_req_id
+      ).length === 0
+    ) {
+      return res.status(400).json({ msg: "No cluster request found" });
+    }
+    //Get the remove index
+    const removeIndex = pet.clusterRequest
+      .map(request => request._id.toString())
+      .indexOf(req.params.cluster_req_id);
+
+    pet.clusterRequest.splice(removeIndex, 1);
+
+    await pet.save();
+
+    res.json(pet.clusterRequest);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+// @route     PUT api/pet/approverequest/:pet_id/:user_id
+// @desc      Add user in cluster request to cluster & remove from cluster Request
+// @access    Private
+
+router.put("/approverequest/:pet_id/:user_id", auth, async (req, res) => {
+  try {
+    const pet = await Pet.findOne({
+      shelter: req.user.id,
+      _id: req.params.pet_id
+    });
+
+    if (
+      pet.clusterRequest.filter(
+        request => request.user.toString() === req.params.user_id
+      ).length === 0
+    ) {
+      return res.status(400).json({ msg: "No cluster request found" });
+    }
+    //Get the remove index
+    const removeIndex = pet.clusterRequest
+      .map(request => request.user.toString())
+      .indexOf(req.params.user_id);
+
+    //Remove from Cluster Request Array
+    pet.clusterRequest.splice(removeIndex, 1);
+
+    //Push user into cluster Array
+    pet.cluster.push({ user: req.params.user_id });
+
+    await pet.save();
+
+    res.json(pet.cluster);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+// @route     PUT api/pet/cluster/:pet_id/:cluster_id
+// @desc      Remove user from Cluster
+// @access    Private
+
+router.put("/cluster/:pet_id/:cluster_id", auth, async (req, res) => {
+  try {
+    const pet = await Pet.findOne({
+      shelter: req.user.id,
+      _id: req.params.pet_id
+    });
+
+    //Check if pet has user in cluster to delete
+    if (
+      pet.cluster.filter(item => item._id.toString() === req.params.cluster_id)
+        .length === 0
+    ) {
+      return res.status(400).json({ msg: "User is not in Cluster" });
+    }
+    //Get the remove index
+    const removeIndex = pet.cluster
+      .map(item => item._id.toString())
+      .indexOf(req.params.cluster_id);
+
+    pet.cluster.splice(removeIndex, 1);
+
+    await pet.save();
+
+    res.json(pet.cluster);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+module.exports = router;

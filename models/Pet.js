@@ -70,10 +70,6 @@ const PetSchema = new mongoose.Schema({
       user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "user"
-      },
-      accepted: {
-        type: Boolean,
-        default: false
       }
     }
   ],
