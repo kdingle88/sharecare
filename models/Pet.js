@@ -29,21 +29,11 @@ const PetSchema = new mongoose.Schema({
     required: true
   },
   food: {
-    type: [String],
-    required: true
+    type: [String]
   },
-  medications: [
-    {
-      name: {
-        type: String,
-        required: true
-      },
-      condition: {
-        type: String,
-        required: true
-      }
-    }
-  ],
+  medications: {
+    type: [String]
+  },
   personality: {
     type: String
   },

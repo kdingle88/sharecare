@@ -92,9 +92,6 @@ router.post(
       check("breed", "Breed is required")
         .not()
         .isEmpty(),
-      check("food", "Food is required")
-        .not()
-        .isEmpty(),
       check("slackspace", "Slack group name is required")
         .not()
         .isEmpty(),
@@ -121,6 +118,7 @@ router.post(
         gallery,
         breed,
         food,
+        medications,
         personality,
         bio,
         slackspace,
@@ -149,6 +147,9 @@ router.post(
       }
       if (food) {
         petFields.food = food.split(",").map(meal => meal.trim());
+      }
+      if (medications) {
+        petFields.medications = medications.split(",").map(med => med.trim());
       }
 
       // Create
@@ -186,9 +187,6 @@ router.put(
       check("breed", "Breed is required")
         .not()
         .isEmpty(),
-      check("food", "Food is required")
-        .not()
-        .isEmpty(),
       check("slackspace", "Slack group name is required")
         .not()
         .isEmpty(),
@@ -212,6 +210,7 @@ router.put(
         gallery,
         breed,
         food,
+        medications,
         personality,
         bio,
         slackspace,
@@ -241,6 +240,10 @@ router.put(
       if (food) {
         petFields.food = food.split(",").map(meal => meal.trim());
       }
+      if (medications) {
+        petFields.medications = medications.split(",").map(med => med.trim());
+      }
+
       let pet = await Pet.findById(req.params.id);
 
       if (pet) {
@@ -296,6 +299,8 @@ router.delete("/:id", auth, async (req, res) => {
 // @route     PUT api/pet/medications/:pet_id
 // @desc      Add pet medications
 // @access    Private
+
+/* Changed to Array for now
 
 router.put(
   "/medications/:pet_id",
@@ -371,6 +376,8 @@ router.delete("/medications/:pet_id/:med_id", auth, async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
+
+*/
 
 // @route     PUT api/pet/request/:pet_id
 // @desc      Request to join pet cluster
