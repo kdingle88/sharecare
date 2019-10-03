@@ -1,7 +1,14 @@
-import { GET_PROFILE, PROFILE_ERROR, CLEAR_PROFILE } from "../actions/types";
+import {
+  GET_PETS,
+  PET_ERROR,
+  GET_MY_PETS,
+  MY_PETS_ERROR,
+  CLEAR_PET
+} from "../actions/types";
 
 const initialState = {
-  profile: null,
+  pet: null,
+  pets: [],
   loading: true,
   error: {}
 };
@@ -10,22 +17,26 @@ export default function(state = initialState, action) {
   const { type, payload } = action;
 
   switch (type) {
-    case GET_PROFILE:
+    case GET_PETS:
+    case GET_MY_PETS:
       return {
         ...state,
-        profile: payload,
+        pets: payload,
         loading: false
       };
-    case PROFILE_ERROR:
+    case PET_ERROR:
+    case MY_PETS_ERROR:
       return {
         ...state,
         error: payload,
         loading: false
       };
-    case CLEAR_PROFILE:
+
+    case CLEAR_PET:
       return {
         ...state,
-        profile: null,
+        pet: null,
+        pets: [],
         loading: false
       };
 

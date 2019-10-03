@@ -21,6 +21,48 @@ router.get("/all", async (req, res) => {
   }
 });
 
+/*
+      MY PETS ROUTE!!!
+
+*/
+// @route     GET api/pet/mypets
+// @desc      Show all pets managed by user
+// @access    Private
+
+router.get("/mypets", auth, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user.id });
+
+    if (user.shelter) {
+      const pets = await Pet.find({ shelter: req.user.id });
+
+      if (!pets || pets.length === 0) {
+        return res
+          .status(404)
+          .json({ errors: [{ msg: "No pets found for this shelter" }] });
+      }
+      res.json(pets);
+    } else if (!user.shelter) {
+      const pets = await Pet.find({ "cluster.user": req.user.id });
+      if (!pets || pets.length === 0) {
+        return res
+          .status(404)
+          .json({ errors: [{ msg: "No pets found for this user" }] });
+      }
+      res.json(pets);
+    }
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === "ObjectId") {
+      return res
+        .status(404)
+        .json({ errors: [{ msg: "No pets found for this user" }] });
+    }
+
+    res.status(500).send("Server Error");
+  }
+});
+
 // @route     Get api/pet/:id
 // @desc      Get a pet
 // @access    Public
@@ -43,7 +85,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // @route     GET api/pet/shelter/:shelter_id
-// @desc      Show all pets by  shelter profile
+// @desc      Show all pets by shelter profile
 // @access    Public
 
 router.get("/shelter/:shelter_id", async (req, res) => {
