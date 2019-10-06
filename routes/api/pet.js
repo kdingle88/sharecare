@@ -21,10 +21,6 @@ router.get("/all", async (req, res) => {
   }
 });
 
-/*
-      MY PETS ROUTE!!!
-
-*/
 // @route     GET api/pet/mypets
 // @desc      Show all pets managed by user
 // @access    Private

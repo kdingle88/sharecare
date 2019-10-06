@@ -1,4 +1,5 @@
 import {
+  GET_A_PET,
   GET_PETS,
   PET_ERROR,
   GET_MY_PETS,
@@ -17,6 +18,7 @@ export default function(state = initialState, action) {
   const { type, payload } = action;
 
   switch (type) {
+    case GET_A_PET:
     case GET_PETS:
     case GET_MY_PETS:
       return {
@@ -24,6 +26,7 @@ export default function(state = initialState, action) {
         pets: payload,
         loading: false
       };
+
     case PET_ERROR:
     case MY_PETS_ERROR:
       return {
