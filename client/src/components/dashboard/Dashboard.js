@@ -3,12 +3,16 @@ import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import Spinner from "../layout/Spinner";
+import DashboardActions from "./DashboardActions";
 import { getCurrentProfile } from "../../actions/profile";
-import { getMyPets } from "../../actions/pet";
+import { getMyPets, getMyPendingPets } from "../../actions/pet";
+import PendingRequest from "../dashboard/PendingRequest";
+import ClusterRequest from "../dashboard/ClusterRequest";
 
 const Dashboard = ({
   getCurrentProfile,
   getMyPets,
+  getMyPendingPets,
   auth: { user },
   profile,
   pet
@@ -16,6 +20,7 @@ const Dashboard = ({
   useEffect(() => {
     getCurrentProfile();
     getMyPets();
+    getMyPendingPets();
   }, []);
 
   return profile.loading && pet.loading && profile.profile === null ? (
@@ -27,7 +32,10 @@ const Dashboard = ({
         <i className="fas fa-user">Welcome {user && user.name}</i>
       </p>
       {profile.profile !== null ? (
-        <Fragment>has</Fragment>
+        <Fragment>
+          <DashboardActions />
+          <PendingRequest pendingPets={pet.pendingPets} />
+        </Fragment>
       ) : (
         <Fragment>
           <p>You have not setup a profile, please add some info</p>
@@ -36,8 +44,11 @@ const Dashboard = ({
           </Link>
         </Fragment>
       )}
+
       {pet.pets.length !== 0 ? (
-        <Fragment>has</Fragment>
+        <Fragment>
+          <ClusterRequest pets={pet.pets} />
+        </Fragment>
       ) : user && user.shelter ? (
         <Fragment>
           <p>You are not managing any pets. Feel free to add one</p>
@@ -54,6 +65,7 @@ const Dashboard = ({
           <Link to="/view-pet" className="btn btn-primary my-1">
             Browse Pets
           </Link>
+          <PendingRequest pendingPets={pet.pendingPets} />
         </Fragment>
       )}
     </Fragment>
@@ -63,6 +75,7 @@ const Dashboard = ({
 Dashboard.propTypes = {
   getCurrentProfile: PropTypes.func.isRequired,
   getMyPets: PropTypes.func.isRequired,
+  getMyPendingPets: PropTypes.func.isRequired,
   auth: PropTypes.object.isRequired,
   profile: PropTypes.object.isRequired
 };
@@ -75,5 +88,5 @@ const mapStateToProps = state => ({
 
 export default connect(
   mapStateToProps,
-  { getCurrentProfile, getMyPets }
+  { getCurrentProfile, getMyPets, getMyPendingPets }
 )(Dashboard);

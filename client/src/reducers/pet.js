@@ -3,13 +3,16 @@ import {
   GET_PETS,
   PET_ERROR,
   GET_MY_PETS,
+  GET_MY_PENDING_PETS,
   MY_PETS_ERROR,
-  CLEAR_PET
+  CLEAR_PET,
+  UPDATE_CLUSTER_REQUEST
 } from "../actions/types";
 
 const initialState = {
   pet: null,
-  pets: [],
+  pets: [], // cluster or managed pets/ cluster Request(user, shelter)
+  pendingPets: [], // Pending requests(user)
   loading: true,
   error: {}
 };
@@ -40,6 +43,24 @@ export default function(state = initialState, action) {
         ...state,
         pet: null,
         pets: [],
+        loading: false
+      };
+
+    case GET_MY_PENDING_PETS:
+      return {
+        ...state,
+        pendingPets: payload,
+        loading: false
+      };
+
+    case UPDATE_CLUSTER_REQUEST:
+      return {
+        ...state,
+        pets: state.pets.map(pet =>
+          pet._id === payload.id
+            ? { ...pet, clusterRequest: payload.clusterRequest }
+            : pet
+        ),
         loading: false
       };
 

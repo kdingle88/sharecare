@@ -58,6 +58,34 @@ router.get("/mypets", auth, async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
+// @route     GET api/pet/mypendingpets
+// @desc      Show pets with pending cluster Request by user
+// @access    Private
+
+router.get("/mypendingpets", auth, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user.id });
+
+    const pets = await Pet.find({
+      "clusterRequest.user": req.user.id
+    }).populate("shelter", "name");
+    if (!pets || pets.length === 0) {
+      return res
+        .status(404)
+        .json({ errors: [{ msg: "No pending requests found for this user" }] });
+    }
+    res.json(pets);
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === "ObjectId") {
+      return res
+        .status(404)
+        .json({ errors: [{ msg: "No pending reqests found for this user" }] });
+    }
+
+    res.status(500).send("Server Error");
+  }
+});
 
 // @route     Get api/pet/:id
 // @desc      Get a pet

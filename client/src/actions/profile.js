@@ -59,3 +59,5 @@ export const createProfile = (
     });
   }
 };
+
+// Delete Profile

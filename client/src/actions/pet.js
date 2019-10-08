@@ -4,8 +4,10 @@ import {
   GET_PETS,
   GET_A_PET,
   GET_MY_PETS,
+  GET_MY_PENDING_PETS,
   PET_ERROR,
-  MY_PETS_ERROR
+  MY_PETS_ERROR,
+  UPDATE_CLUSTER_REQUEST
 } from "./types";
 
 // Get Pet
@@ -41,7 +43,7 @@ export const getPets = () => async dispatch => {
     });
   }
 };
-// Get User's Pets
+// Get User's Pets (Cluster or managed)
 export const getMyPets = () => async dispatch => {
   try {
     const res = await axios.get("api/pet/mypets");
@@ -103,3 +105,70 @@ export const updatePet = (formData, history, id) => async dispatch => {
     });
   }
 };
+
+export const getMyPendingPets = userId => async dispatch => {
+  try {
+    const res = await axios.get("api/pet/mypendingpets");
+
+    dispatch({
+      type: GET_MY_PENDING_PETS,
+      payload: res.data
+    });
+  } catch (err) {
+    dispatch({
+      type: MY_PETS_ERROR,
+      payload: { msg: err.response.statusText, status: err.response.status }
+    });
+  }
+};
+
+// Add Cluster Request
+export const addClusterRequest = petId => async dispatch => {
+  try {
+    const res = await axios.put(`api/pet/request/${petId}`);
+
+    dispatch({
+      type: UPDATE_CLUSTER_REQUEST,
+      payload: { petId, clusterRequest: res.data }
+    });
+
+    dispatch(setAlert("Pet Added to your cluster", "success"));
+  } catch (err) {
+    const errors = err.response.data.errors;
+
+    if (errors) {
+      errors.forEach(error => dispatch(setAlert(error.msg, "danger")));
+    }
+
+    dispatch({
+      type: PET_ERROR,
+      payload: { msg: err.response.statusText, status: err.response.status }
+    });
+  }
+};
+// DELETE Cluster Request/ Cancel Request
+export const removeClusterRequest = petId => async dispatch => {
+  try {
+    const res = await axios.put(`api/pet/unrequest/${petId}`);
+
+    dispatch({
+      type: UPDATE_CLUSTER_REQUEST,
+      payload: { petId, clusterRequest: res.data }
+    });
+
+    dispatch(setAlert("Pet removed from your cluster", "success"));
+  } catch (err) {
+    const errors = err.response.data.errors;
+
+    if (errors) {
+      errors.forEach(error => dispatch(setAlert(error.msg, "danger")));
+    }
+
+    dispatch({
+      type: PET_ERROR,
+      payload: { msg: err.response.statusText, status: err.response.status }
+    });
+  }
+};
+
+// Delete Pet
