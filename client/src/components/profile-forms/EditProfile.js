@@ -22,7 +22,7 @@ const EditProfile = ({
       location: loading || !profile.location ? "" : profile.location,
       bio: loading || !profile.bio ? "" : profile.bio
     });
-  }, [loading]);
+  }, [loading, getCurrentProfile]);
 
   const { location, bio } = formData;
 

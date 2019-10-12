@@ -1,16 +1,25 @@
 import React, { Fragment } from "react";
 import PropTypes from "prop-types";
-import { connect } from "react-redux";
 
-const ClusterRequest = ({ pets }) => {
+const ClusterRequest = ({ pets, acceptClusterRequest, denyClusterRequest }) => {
   const clusterPets = pets.map(pet =>
     pet.clusterRequest.map(user => (
       <tr key={pet._id}>
         <td>{user.name}</td>
         <td>{pet.name}</td>
         <td>
-          <button className="btn btn-success">Accept</button>
-          <button className="btn btn-danger">Decline</button>
+          <button
+            className="btn btn-success"
+            onClick={() => acceptClusterRequest(pet._id, user._id)}
+          >
+            Accept
+          </button>
+          <button
+            className="btn btn-danger"
+            onClick={() => denyClusterRequest(pet._id, user._id)}
+          >
+            Decline
+          </button>
         </td>
       </tr>
     ))
@@ -33,7 +42,9 @@ const ClusterRequest = ({ pets }) => {
 };
 
 ClusterRequest.propTypes = {
-  pets: PropTypes.array.isRequired
+  pets: PropTypes.array.isRequired,
+  acceptClusterRequest: PropTypes.func.isRequired,
+  denyClusterRequest: PropTypes.func.isRequired
 };
 
 export default ClusterRequest;

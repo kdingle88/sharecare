@@ -1,14 +1,21 @@
 import React, { Fragment } from "react";
 import PropTypes from "prop-types";
-import { connect } from "react-redux";
 
-const PendingRequest = ({ pendingPets }) => {
+const PendingRequest = ({ pendingPets, removeClusterRequest }) => {
   const pendingRequests = pendingPets.map(pet => (
     <tr key={pet._id}>
       <td>{pet.shelter.name}</td>
       <td>{pet.name}</td>
       <td>
-        <button className="btn btn-light">Cancel Request</button>
+        <button
+          className="btn btn-light"
+          onClick={() => {
+            removeClusterRequest(pet._id);
+            window.location.reload();
+          }}
+        >
+          Cancel Request
+        </button>
       </td>
     </tr>
   ));
@@ -30,7 +37,8 @@ const PendingRequest = ({ pendingPets }) => {
 };
 
 PendingRequest.propTypes = {
-  pendingPets: PropTypes.array.isRequired
+  pendingPets: PropTypes.array.isRequired,
+  removeClusterRequest: PropTypes.func.isRequired
 };
 
 export default PendingRequest;

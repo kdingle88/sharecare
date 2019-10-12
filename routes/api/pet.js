@@ -30,7 +30,10 @@ router.get("/mypets", auth, async (req, res) => {
     const user = await User.findOne({ _id: req.user.id });
 
     if (user.shelter) {
-      const pets = await Pet.find({ shelter: req.user.id });
+      const pets = await Pet.find({ shelter: req.user.id }).populate(
+        "clusterRequest",
+        "name"
+      );
 
       if (!pets || pets.length === 0) {
         return res
@@ -39,7 +42,7 @@ router.get("/mypets", auth, async (req, res) => {
       }
       res.json(pets);
     } else if (!user.shelter) {
-      const pets = await Pet.find({ "cluster.user": req.user.id });
+      const pets = await Pet.find({ cluster: req.user.id });
       if (!pets || pets.length === 0) {
         return res
           .status(404)
@@ -62,12 +65,13 @@ router.get("/mypets", auth, async (req, res) => {
 // @desc      Show pets with pending cluster Request by user
 // @access    Private
 
+//STARTED CHANGING CLUSTER HERE
 router.get("/mypendingpets", auth, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id });
 
     const pets = await Pet.find({
-      "clusterRequest.user": req.user.id
+      clusterRequest: req.user.id
     }).populate("shelter", "name");
     if (!pets || pets.length === 0) {
       return res
@@ -92,7 +96,7 @@ router.get("/mypendingpets", auth, async (req, res) => {
 // @access    Public
 router.get("/:id", async (req, res) => {
   try {
-    const pet = await Pet.findById(req.params.id);
+    const pet = await Pet.findById(req.params.id).populate("shelter", "name");
 
     if (!pet) {
       return res.status(404).json({ errors: [{ msg: "Pet not found" }] });
@@ -341,9 +345,9 @@ router.put(
 
 router.delete("/:id", auth, async (req, res) => {
   try {
-    const pet = await Pet.findById(req.params.id);
+    const pet = await Pet.findOne({ _id: req.params.id });
 
-    if (!pet || err.kind === "ObjectId") {
+    if (!pet) {
       return res.status(404).json({ errors: [{ msg: "Pet not found" }] });
     }
 
@@ -456,9 +460,8 @@ router.put("/request/:pet_id", auth, async (req, res) => {
     //Check if pet already has cluster request by user
 
     if (
-      pet.clusterRequest.filter(
-        request => request.user.toString() === req.user.id
-      ).length > 0
+      pet.clusterRequest.filter(request => request.toString() === req.user.id)
+        .length > 0
     ) {
       return res
         .status(400)
@@ -466,12 +469,12 @@ router.put("/request/:pet_id", auth, async (req, res) => {
     }
     //Check to see if user is already in cluster
     if (
-      pet.cluster.filter(request => request.user.toString() === req.user.id)
-        .length > 0
+      pet.cluster.filter(request => request.toString() === req.user.id).length >
+      0
     ) {
       return res.status(400).json({ msg: "You are already in cluster" });
     }
-    pet.clusterRequest.push({ user: req.user.id });
+    pet.clusterRequest.push(req.user.id);
 
     await pet.save();
 
@@ -492,9 +495,8 @@ router.put("/unrequest/:pet_id", auth, async (req, res) => {
 
     //Check if pet even has cluster request by user to delete
     if (
-      pet.clusterRequest.filter(
-        request => request.user.toString() === req.user.id
-      ).length === 0
+      pet.clusterRequest.filter(request => request.toString() === req.user.id)
+        .length === 0
     ) {
       return res
         .status(400)
@@ -502,7 +504,7 @@ router.put("/unrequest/:pet_id", auth, async (req, res) => {
     }
     //Get the remove index
     const removeIndex = pet.clusterRequest
-      .map(request => request.user.toString())
+      .map(request => request.toString())
       .indexOf(req.user.id);
 
     pet.clusterRequest.splice(removeIndex, 1);
@@ -520,7 +522,7 @@ router.put("/unrequest/:pet_id", auth, async (req, res) => {
 // @desc      Shelter remove user request to join pet cluster
 // @access    Private
 
-router.put("/denyrequest/:pet_id/:cluster_req_id", auth, async (req, res) => {
+router.put("/denyrequest/:pet_id/:user_id", auth, async (req, res) => {
   try {
     const pet = await Pet.findOne({
       shelter: req.user.id,
@@ -530,15 +532,15 @@ router.put("/denyrequest/:pet_id/:cluster_req_id", auth, async (req, res) => {
     //Check if pet even has cluster request by user to delete
     if (
       pet.clusterRequest.filter(
-        request => request._id.toString() === req.params.cluster_req_id
+        request => request.toString() === req.params.user_id
       ).length === 0
     ) {
       return res.status(400).json({ msg: "No cluster request found" });
     }
     //Get the remove index
     const removeIndex = pet.clusterRequest
-      .map(request => request._id.toString())
-      .indexOf(req.params.cluster_req_id);
+      .map(request => request.toString())
+      .indexOf(req.params.user_id);
 
     pet.clusterRequest.splice(removeIndex, 1);
 
@@ -564,21 +566,21 @@ router.put("/approverequest/:pet_id/:user_id", auth, async (req, res) => {
 
     if (
       pet.clusterRequest.filter(
-        request => request.user.toString() === req.params.user_id
+        request => request.toString() === req.params.user_id
       ).length === 0
     ) {
       return res.status(400).json({ msg: "No cluster request found" });
     }
     //Get the remove index
     const removeIndex = pet.clusterRequest
-      .map(request => request.user.toString())
+      .map(request => request.toString())
       .indexOf(req.params.user_id);
 
     //Remove from Cluster Request Array
     pet.clusterRequest.splice(removeIndex, 1);
 
     //Push user into cluster Array
-    pet.cluster.push({ user: req.params.user_id });
+    pet.cluster.push(req.params.user_id);
 
     await pet.save();
 
@@ -593,7 +595,7 @@ router.put("/approverequest/:pet_id/:user_id", auth, async (req, res) => {
 // @desc      Remove user from Cluster
 // @access    Private
 
-router.put("/cluster/:pet_id/:cluster_id", auth, async (req, res) => {
+router.put("/cluster/:pet_id/:user_id", auth, async (req, res) => {
   try {
     const pet = await Pet.findOne({
       shelter: req.user.id,
@@ -602,15 +604,15 @@ router.put("/cluster/:pet_id/:cluster_id", auth, async (req, res) => {
 
     //Check if pet has user in cluster to delete
     if (
-      pet.cluster.filter(item => item._id.toString() === req.params.cluster_id)
+      pet.cluster.filter(item => item.toString() === req.params.user_id)
         .length === 0
     ) {
       return res.status(400).json({ msg: "User is not in Cluster" });
     }
     //Get the remove index
     const removeIndex = pet.cluster
-      .map(item => item._id.toString())
-      .indexOf(req.params.cluster_id);
+      .map(item => item.toString())
+      .indexOf(req.params.user_id);
 
     pet.cluster.splice(removeIndex, 1);
 

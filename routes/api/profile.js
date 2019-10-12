@@ -121,6 +121,7 @@ router.get("/user/:user_id", auth, async (req, res) => {
 router.delete("/", auth, async (req, res) => {
   try {
     // @todo - remove user's pets
+    await Pet.deleteMany({ shelter: req.user.id });
     //Remove profile
     await Profile.findOneAndRemove({ user: req.user.id });
     // Remove user

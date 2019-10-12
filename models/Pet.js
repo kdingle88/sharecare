@@ -57,18 +57,14 @@ const PetSchema = new mongoose.Schema({
   },
   clusterRequest: [
     {
-      user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "user"
-      }
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user"
     }
   ],
   cluster: [
     {
-      user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "user"
-      }
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user"
     }
   ],
   date: {

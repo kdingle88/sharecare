@@ -6,7 +6,8 @@ import {
   GET_MY_PENDING_PETS,
   MY_PETS_ERROR,
   CLEAR_PET,
-  UPDATE_CLUSTER_REQUEST
+  UPDATE_CLUSTER_REQUEST,
+  UPDATE_CLUSTER
 } from "../actions/types";
 
 const initialState = {
@@ -22,6 +23,12 @@ export default function(state = initialState, action) {
 
   switch (type) {
     case GET_A_PET:
+      return {
+        ...state,
+        pet: payload,
+        loading: false
+      };
+
     case GET_PETS:
     case GET_MY_PETS:
       return {
@@ -57,9 +64,17 @@ export default function(state = initialState, action) {
       return {
         ...state,
         pets: state.pets.map(pet =>
-          pet._id === payload.id
+          pet._id === payload.petId
             ? { ...pet, clusterRequest: payload.clusterRequest }
             : pet
+        ),
+        loading: false
+      };
+    case UPDATE_CLUSTER:
+      return {
+        ...state,
+        pets: state.pets.map(pet =>
+          pet._id === payload.petId ? { ...pet, cluster: payload.cluster } : pet
         ),
         loading: false
       };

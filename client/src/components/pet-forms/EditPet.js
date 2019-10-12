@@ -1,10 +1,16 @@
-import React, { useState, Fragment } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, Fragment } from "react";
+import { Link, withRouter } from "react-router-dom";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
-import { createPet } from "../../actions/pet";
+import { updatePet, getPet } from "../../actions/pet";
 
-const CreatePet = ({ createPet, history }) => {
+const EditPet = ({
+  pet: { pet, loading },
+  getPet,
+  updatePet,
+  history,
+  match: { params }
+}) => {
   const [formData, setFormData] = useState({
     name: "",
     age: "",
@@ -20,6 +26,26 @@ const CreatePet = ({ createPet, history }) => {
     location: "",
     notes: ""
   });
+
+  useEffect(() => {
+    getPet(params.id);
+
+    setFormData({
+      name: loading || !pet.name ? "" : pet.name,
+      age: loading || !pet.age ? "" : pet.age,
+      avatar: loading || !pet.avatar ? "" : pet.avatar,
+      species: loading || !pet.species ? "" : pet.species,
+      breed: loading || !pet.breed ? "" : pet.breed,
+      gallery: loading || !pet.gallery ? "" : pet.gallery,
+      personality: loading || !pet.personality ? "" : pet.personality,
+      bio: loading || !pet.bio ? "" : pet.bio,
+      slackspace: loading || !pet.slackspace ? "" : pet.slackspace,
+      food: loading || !pet.food ? "" : pet.food,
+      medications: loading || !pet.medications ? "" : pet.medications,
+      location: loading || !pet.location ? "" : pet.location,
+      notes: loading || !pet.notes ? "" : pet.notes
+    });
+  }, [loading, getPet, params.id]);
 
   const {
     name,
@@ -42,7 +68,7 @@ const CreatePet = ({ createPet, history }) => {
 
   const onSubmit = e => {
     e.preventDefault();
-    createPet(formData, history);
+    updatePet(formData, history, pet._id);
   };
 
   return (
@@ -213,11 +239,17 @@ const CreatePet = ({ createPet, history }) => {
   );
 };
 
-CreatePet.propTypes = {
-  createPet: PropTypes.func.isRequired
+EditPet.propTypes = {
+  updatePet: PropTypes.func.isRequired,
+  getPet: PropTypes.func.isRequired,
+  pet: PropTypes.object.isRequired
 };
 
+const mapStateToProps = state => ({
+  pet: state.pet
+});
+
 export default connect(
-  null,
-  { createPet }
-)(CreatePet);
+  mapStateToProps,
+  { getPet, updatePet }
+)(withRouter(EditPet));
